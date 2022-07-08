@@ -12,6 +12,12 @@
     <description>Aggregator for Hotswap Agent projects</description>
     <url>https://github.com/HotswapProjects/HotswapAgent</url>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+
     <modules>
         <module>hotswap-agent-parent</module>
         <module>hotswap-agent-core</module>
@@ -52,6 +58,7 @@
         <module>plugin/hotswap-agent-weblogic-plugin</module>
         <module>plugin/hotswap-agent-plugins</module>
         <module>hotswap-agent</module>
+        <module>test-jdk-plugin</module>
     </modules>
 
     <licenses>

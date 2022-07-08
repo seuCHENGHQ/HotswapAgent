@@ -240,7 +240,7 @@
                         <artifactId>tools</artifactId>
                         <version>${java.version}</version>
                         <scope>system</scope>
-                        <systemPath>${java.home}/../lib/tools.jar</systemPath>
+                        <systemPath>/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home/lib/tools.jar</systemPath>
                         <optional>true</optional>
                     </dependency>
                 </dependencies>
