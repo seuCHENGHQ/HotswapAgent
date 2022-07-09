@@ -60,6 +60,7 @@
         <module>hotswap-agent</module>
         <module>test-jdk-plugin</module>
         <module>test-spring-plugin</module>
+        <module>test-mybatis-plugin</module>
     </modules>
 
     <licenses>
