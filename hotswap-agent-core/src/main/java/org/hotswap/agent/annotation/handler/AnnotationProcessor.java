@@ -48,9 +48,14 @@ public class AnnotationProcessor {
             new HashMap<Class<? extends Annotation>, PluginHandler>();
 
     public void init(PluginManager pluginManager) {
+        // 这里非常重要，各handler负责执行对应注解的初始化操作，比如
+        // 在filed上加@Init注解，那么InitHandler会将对应的示例注入进去，有点像spring的@Autowired
         addAnnotationHandler(Init.class, new InitHandler(pluginManager));
+        // OnClassLoadedHandler会负责将Plugin插件注册到HotswapTransformer上，这样在类加载时，plugin中被OnClassLoadedHandler注解的方法就会被回调，来执行一些个性化增强策略
         addAnnotationHandler(OnClassLoadEvent.class, new OnClassLoadedHandler(pluginManager));
+        // OnClassFileEvent关注的是class文件的变化，因此WatchHandler会把classPath路径的注册到观测路径上去，当文件发生变化时会回调被这个注解标注的方法
         addAnnotationHandler(OnClassFileEvent.class, new WatchHandler(pluginManager));
+        // OnResourceFileEvent关注的是资源文件的变化，比如mybatis的mapper.xml文件，也是通过WatchHandler来注册监听时间，方便文件有变化时进行回调
         addAnnotationHandler(OnResourceFileEvent.class, new WatchHandler(pluginManager));
     }
 
@@ -68,6 +73,7 @@ public class AnnotationProcessor {
     public boolean processAnnotations(Class processClass, Class pluginClass) {
 
         try {
+            // 可以看到这里都是处理的static的成员变量和方法
             for (Field field : processClass.getDeclaredFields()) {
                 if (Modifier.isStatic(field.getModifiers()))
                     if (!processFieldAnnotations(null, field, pluginClass))
@@ -89,6 +95,10 @@ public class AnnotationProcessor {
                     }
                 }
             }
+
+            // 如果有一些非static的成员变量和方法需要初始化，记得要在static方法里手动来调用org.hotswap.agent.util.PluginManagerInvoker.callInitializePlugin
+            // 可以看到最终会走到下面的processAnnotations(Object plugin)，进行非static部分的初始化
+            // HotSwapperPlugin就做了这个事情(有一个非static方法被OnClassFileEvent标记，通过上边的方式将其注册到WatchService上)
 
             return true;
         } catch (Throwable e) {

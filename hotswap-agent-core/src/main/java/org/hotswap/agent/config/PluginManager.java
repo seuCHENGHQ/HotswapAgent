@@ -130,18 +130,23 @@ public class PluginManager {
 
         if (watcher == null) {
             try {
+                // 通过文件系统监视器 通过NIO的方式来感知订阅的路径下文件是否有变化（新增 & 修改 & 删除）
                 watcher = new WatcherFactory().getWatcher();
             } catch (IOException e) {
                 LOGGER.debug("Unable to create default watcher.", e);
             }
         }
+        // 这块是起了一个线程，通过轮询的方式检查是否有文件变化事件
         watcher.run();
 
         if (scheduler == null) {
             scheduler = new SchedulerImpl();
         }
+        // scheduler其实就是个线程池 文件有变化 -> watcher会回调plugin -> plugin把自己要做的具体操作提交到scheduler中去执行
         scheduler.run();
 
+        // 这里把所有带有@Plugin注解的类都扫出来，不过这块约定他们一定在PLUGIN_PACKAGE路径下
+        // 都扫描出来之后，会对其进行初始化
         pluginRegistry.scanPlugins(getClass().getClassLoader(), PLUGIN_PACKAGE);
 
         LOGGER.debug("Registering transformer ");

@@ -286,6 +286,7 @@ public abstract class AbstractNIO2Watcher implements Watcher {
             public void run() {
                 try {
                     for (;;) {
+                        // 这块是通过polling的方式，来轮询文件变化事件，然后针对每个事件，调用对应的plugin方法进行处理
                         if (stopped || !processEvents()) {
                             break;
                         }

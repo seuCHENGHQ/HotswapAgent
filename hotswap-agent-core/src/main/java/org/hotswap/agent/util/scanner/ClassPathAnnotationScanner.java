@@ -68,13 +68,16 @@ public class ClassPathAnnotationScanner {
                 ClassFile cf;
                 try {
                     DataInputStream dstream = new DataInputStream(file);
+                    // 这块可以好好看看，从class文件，按照class文件协议的定义，把他们读进来
                     cf = new ClassFile(dstream);
                 } catch (IOException e) {
                     throw new IOException("Stream not a valid classFile", e);
                 }
 
-                if (hasAnnotation(cf))
+                if (hasAnnotation(cf)) {
+                    // 如果有Plugin注解，说明是我们想找的类，就把它的类名加到list里面
                     files.add(cf.getName());
+                }
             }
         });
         return files;
@@ -88,6 +91,7 @@ public class ClassPathAnnotationScanner {
         AnnotationsAttribute visible = (AnnotationsAttribute) cf.getAttribute(AnnotationsAttribute.visibleTag);
         if (visible != null) {
             for (Annotation ann : visible.getAnnotations()) {
+                // 这块从构造方法那里可以看到，传进来是annotation = @Plugin.class 因此这里是过滤出指定路径下，带有@Plugin注解的类
                 if (annotation.equals(ann.getTypeName())) {
                     return true;
                 }

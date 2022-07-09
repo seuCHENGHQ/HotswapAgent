@@ -99,6 +99,7 @@ public class PluginRegistry {
         ClassLoader agentClassLoader = getClass().getClassLoader();
 
         try {
+            // 具体的扫描逻辑
             List<String> discoveredPlugins = annotationScanner.scanPlugins(classLoader, pluginPath);
             List<String> discoveredPluginNames = new ArrayList<>();
 
@@ -109,16 +110,19 @@ public class PluginRegistry {
             }
 
             for (String discoveredPlugin : discoveredPlugins) {
+                // 根据我们扫描出来的结果，把它加载进来
                 Class pluginClass = Class.forName(discoveredPlugin, true, agentClassLoader);
                 Plugin pluginAnnotation = (Plugin) pluginClass.getAnnotation(Plugin.class);
 
                 if (pluginAnnotation == null) {
+                    // 这块scanPlugins那里已经判断过了，理论上不应该出现拿不到Plugin注解的情况，所以打了error日志
                     LOGGER.error("Scanner discovered plugin class {} which does not contain @Plugin annotation.", pluginClass);
                     continue;
                 }
                 String pluginName = pluginAnnotation.name();
 
                 if (HotswapAgent.isPluginDisabled(pluginName)) {
+                    // 看我们在启动命令或者properties里面有没有禁用这个plugin，如果禁用的话也不初始化这个plugin了
                     LOGGER.debug("Plugin {} is disabled, skipping...", pluginName);
                     continue;
                 }
@@ -126,13 +130,16 @@ public class PluginRegistry {
                 // check for duplicate plugin definition. It may happen if class directory AND the JAR file
                 // are both available.
                 if (registeredPlugins.containsKey(pluginClass))
+                    // 每个plugin只需要被初始化一遍，因此如果已经包含了说明初始化过了，就直接跳过
                     continue;
 
                 registeredPlugins.put(pluginClass, Collections.synchronizedMap(new HashMap<ClassLoader, Object>()));
 
+                // processAnnotations非常重要！！要重点看一下，这个方法执行了plug的初始化逻辑
                 if (annotationProcessor.processAnnotations(pluginClass, pluginClass)) {
                     LOGGER.debug("Plugin registered {}.", pluginClass);
                 } else {
+                    // 如果有异常，说明该plugin初始化失败，需要将其移除，打个异常日志
                     LOGGER.error("Error processing annotations for plugin {}. Plugin was unregistered.", pluginClass);
                     registeredPlugins.remove(pluginClass);
                 }
@@ -140,6 +147,7 @@ public class PluginRegistry {
                 discoveredPluginNames.add(pluginName);
             }
 
+            // 扫描到的plugin，不一定就是初始化成功的
             LOGGER.info("Discovered plugins: " + Arrays.toString(discoveredPluginNames.toArray()));
 
         } catch (Exception e) {
