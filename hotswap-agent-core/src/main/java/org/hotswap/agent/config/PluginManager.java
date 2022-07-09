@@ -147,7 +147,7 @@ public class PluginManager {
 
         // 这里把所有带有@Plugin注解的类都扫出来，不过这块约定他们一定在PLUGIN_PACKAGE路径下
         // 都扫描出来之后，会对其进行初始化
-        // 出了初始化，对于OnClassFileEvent注解的plugin，会将其注册到hotswapTransformer中
+        // 出了初始化，对于OnClassLoadedHandler注解的plugin，会将其注册到hotswapTransformer中
         pluginRegistry.scanPlugins(getClass().getClassLoader(), PLUGIN_PACKAGE);
 
         LOGGER.debug("Registering transformer ");
