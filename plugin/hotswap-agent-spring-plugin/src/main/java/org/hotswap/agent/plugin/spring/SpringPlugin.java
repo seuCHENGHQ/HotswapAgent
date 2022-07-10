@@ -100,6 +100,8 @@ public class SpringPlugin {
 
     private void initBasePackagePrefixes() {
         PluginConfiguration pluginConfiguration = new PluginConfiguration(this.appClassLoader);
+        // basePackagePreFixes在hotswap-agent.properties中可以配置
+        // TODO 这个配置了之后有什么作用？？？
         if (basePackagePrefixes == null || basePackagePrefixes.length == 0) {
             basePackagePrefixes = pluginConfiguration.getBasePackagePrefixes();
         } else {
@@ -239,14 +241,27 @@ public class SpringPlugin {
     @OnClassLoadEvent(classNameRegexp = "org.springframework.beans.factory.support.DefaultListableBeanFactory")
     public static void register(CtClass clazz) throws NotFoundException, CannotCompileException {
         StringBuilder src = new StringBuilder("{");
+        // setCacheBeanMetadata在AbstractBeanFactory中，这里关掉了bean元数据缓存
         src.append("setCacheBeanMetadata(false);");
         // init a spring plugin with every appclassloader
+        // TODO 为什么这里会有多个classLoader？
+        // 跟进去看这里是对springPlugin对象的非static字段进行了初始化 & 监听*.xml文件的变化
         src.append(PluginManagerInvoker.buildInitializePlugin(SpringPlugin.class));
+        // 生成了一段代码，这段代码通过反射的方式调用了Spring.init(String version)方法
         src.append(PluginManagerInvoker.buildCallPluginMethod(SpringPlugin.class, "init",
                 "org.springframework.core.SpringVersion.getVersion()", String.class.getName()));
         src.append("}");
 
+        // TODO 为什么要在构造方法前面插入这一段代码？？？
         for (CtConstructor constructor : clazz.getDeclaredConstructors()) {
+            // 构造方法其实会默认先调用super()来完成父类的加载，那么这里就是在super()之后插入代码，但是在子类构造方法的代码之前
+            /*
+             * super()
+             * src.toString()的代码
+             * 子类构造方法的代码
+             * 插入完成之后大概是这么个结构
+             *
+             */
             constructor.insertBeforeBody(src.toString());
         }
 
@@ -261,6 +276,7 @@ public class SpringPlugin {
         //                  exposedObject = earlySingletonReference;
         //   The waring is because I am not sure what is going on here.
 
+        // TODO 下面这俩方法干啥的？？？
         CtMethod method = clazz.getDeclaredMethod("freezeConfiguration");
         method.insertBefore(
                 "org.hotswap.agent.plugin.spring.ResetSpringStaticCaches.resetBeanNamesByType(this); " +

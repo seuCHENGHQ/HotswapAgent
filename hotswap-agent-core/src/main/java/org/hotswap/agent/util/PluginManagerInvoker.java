@@ -110,6 +110,8 @@ public class PluginManagerInvoker {
     }
 
     /**
+     * 生成一段代码，代码的功能是使用反射调用pluginClass对象中method(paramValueAndType)方法的一段代码
+     *
      * Same as {@link PluginManagerInvoker#buildCallPluginMethod(Class, String, String...)}, but with explicit
      * appClassLoader variable. Use this method if appClassLoader is different from getClass().getClassLoader().
      */
@@ -117,6 +119,8 @@ public class PluginManagerInvoker {
                                                String method, String... paramValueAndType) {
 
         String managerClass = PluginManager.class.getName();
+        // paramValueAndType传进来的是一个数组，结构是{paramValue, paramValueType, paramValue, paramValueType, ...}
+        // 因此，method方法的实际入参数量应该是paramValueAndType / 2
         int paramCount = paramValueAndType.length / 2;
 
         StringBuilder b = new StringBuilder();
@@ -124,10 +128,12 @@ public class PluginManagerInvoker {
         // block to hide variables and catch checked exceptions
         b.append("try {");
 
+        // 1. 获取PluginManager的classLoader
         b.append("ClassLoader __pluginClassLoader = ");
         b.append(managerClass);
         b.append(".class.getClassLoader();");
 
+        // 2. 根据pluginClass，从PluginManager中获取pluginClass对应的实例
         // Object __pluginInstance = org.hotswap.agent.config.PluginManager.getInstance().getPlugin(org.hotswap.agent.plugin.TestPlugin.class.getName(), __pluginClassLoader);
         b.append("Object __pluginInstance = ");
         b.append(managerClass);
@@ -135,6 +141,7 @@ public class PluginManagerInvoker {
         b.append(pluginClass.getName());
         b.append(".class.getName(), " + appClassLoaderVar + ");");
 
+        // 3. 用传进来的classLoader再load一遍pluginClass 为什么这里要再load一遍？？是classLoader会不一样吗
         // Class __pluginClass = __pluginClassLoader.loadClass("org.hotswap.agent.plugin.TestPlugin");
         b.append("Class __pluginClass = ");
         b.append("__pluginClassLoader.loadClass(\"");
@@ -144,21 +151,25 @@ public class PluginManagerInvoker {
         // param types
         b.append("Class[] paramTypes = new Class[" + paramCount + "];");
         for (int i = 0; i < paramCount; i++) {
+            // 4. 获取method方法的入参类型 paramValueAndType的奇数index位置都是类型，因此这里使用paramValueAndType[(i * 2) + 1]来获取
             // paramTypes[i] = = __pluginClassLoader.loadClass("my.test.TestClass").getClass();
             b.append("paramTypes[" + i + "] = __pluginClassLoader.loadClass(\"" + paramValueAndType[(i * 2) + 1] + "\");");
         }
 
+        // 5. 通过methodName + 反射，获取要回调的plugin的method
         //   java.lang.reflect.Method __pluginMethod = __pluginClass.getDeclaredMethod("method", paramType1, paramType2);
         b.append("java.lang.reflect.Method __callPlugin = __pluginClass.getDeclaredMethod(\"");
         b.append(method);
         b.append("\", paramTypes");
         b.append(");");
 
+        // 6. 获取method方法入参的参数值 入参值在paramValueAndType的偶数位置，因此用paramValueAndType[i * 2]来获取
         b.append("Object[] params = new Object[" + paramCount + "];");
         for (int i = 0; i < paramCount; i = i + 1) {
             b.append("params[" + i + "] = " + paramValueAndType[i * 2] + ";");
         }
 
+        // 7. 通过反射，回调method对应的方法
         // __pluginMethod.invoke(__pluginInstance, param1, param2);
         b.append("__callPlugin.invoke(__pluginInstance, params);");
 
