@@ -55,6 +55,7 @@ public class JdkPlugin {
      */
     public static boolean reloadFlag;
 
+    // java.beans是java图形界面相关的东西，这东西现在不怎么用了吧，被前端淘汰了？不用特别关注
     @OnClassLoadEvent(classNameRegexp = ".*", events = LoadEvent.REDEFINE, skipSynthetic=false)
     public static void flushBeanIntrospectorCaches(ClassLoader classLoader, CtClass ctClass) {
         try {
@@ -98,6 +99,7 @@ public class JdkPlugin {
         }
     }
 
+    // com.sun.beans.introspect.ClassInfo在java9之后被移除，感觉也是个和图形界面相关的东西，不用特别关注
     @OnClassLoadEvent(classNameRegexp = ".*", events = LoadEvent.REDEFINE, skipSynthetic=false)
     public static void flushIntrospectClassInfoCache(ClassLoader classLoader, CtClass ctClass) {
         // com.sun.beans.introspect.ClassInfo was intruduced in j9
@@ -121,6 +123,8 @@ public class JdkPlugin {
         }
     }
 
+    // java.io.ObjectStreamClass class会有一个序列化描述符(如果使用到序列化的话)，保存在ObjectStreamClass中。那么在热更新之后，实际上这个class是可能会变化的
+    // 因此这里将cache都清空，避免脏缓存
     @OnClassLoadEvent(classNameRegexp = ".*", events = LoadEvent.REDEFINE, skipSynthetic=false)
     public static void flushObjectStreamCaches(ClassLoader classLoader, CtClass ctClass) {
         try {
