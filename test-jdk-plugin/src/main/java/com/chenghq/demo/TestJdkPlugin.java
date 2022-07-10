@@ -21,6 +21,6 @@ public class TestJdkPlugin {
     }
 
     public void doPrint() {
-        System.out.println("after hotswap");
+        System.out.println("before hotswap");
     }
 }

@@ -103,12 +103,15 @@ public class HotswapperPlugin {
      */
     public void initHotswapCommand(ClassLoader appClassLoader, String port) {
         if (port != null && port.length() > 0) {
+            // 本地运行的时候是不指定jpda端口的
             hotswapCommand = new ReflectionCommand(this, HotswapperCommand.class.getName(), "hotswap", appClassLoader,
                     port, reloadMap);
         } else {
+            // 本地运行的时候走的是这边
             hotswapCommand = new Command() {
                 @Override
                 public void executeCommand() {
+                    // 进行类的重定义
                     pluginManager.hotswap(reloadMap);
                 }
 
@@ -148,6 +151,8 @@ public class HotswapperPlugin {
 
         String port = pluginConfiguration.getProperty("autoHotswap.port");
 
+        // 如果启用了autoHotSwap自动热加载功能，这个方法会把上边的watchReload方法注册到watchService中，监听的目录是classPath
+        // 这样，如果class文件有变化，那么就会回调上边的watchReload方法，进行类的重新加载
         HotswapperPlugin plugin = PluginManagerInvoker.callInitializePlugin(HotswapperPlugin.class, appClassLoader);
         if (plugin != null) {
             plugin.initHotswapCommand(appClassLoader, port);

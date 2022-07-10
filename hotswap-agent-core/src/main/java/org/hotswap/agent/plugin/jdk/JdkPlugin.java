@@ -37,6 +37,8 @@ import org.hotswap.agent.util.ReflectionHelper;
  *  <li> flush ObjectStream caches
  * </ul>
  *  @author Vladimir Dvorak
+ *
+ *  TODO 为什么在热加载之后，需要执行下面三个flush方法？？？他们起到了什么作用？？？
  */
 @Plugin(name = "JdkPlugin",
         description = "",

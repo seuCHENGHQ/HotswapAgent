@@ -160,6 +160,7 @@ public class WatchEventCommand<T extends Annotation> extends MergeableCommand {
                 pluginAnnotation.getMethod().getName(), plugin.getClass().getName(), event);
 
 
+        // 回调被OnClassFileEvent和OnResourceFileEvent注解的方法，被注解的方法只能有下面这几种类型的入参
         List<Object> args = new ArrayList<>();
         for (Class<?> type : pluginAnnotation.getMethod().getParameterTypes()) {
             if (type.isAssignableFrom(ClassLoader.class)) {
@@ -188,6 +189,7 @@ public class WatchEventCommand<T extends Annotation> extends MergeableCommand {
             }
         }
         try {
+            // 进行回调
             pluginAnnotation.getMethod().invoke(plugin, args.toArray());
 
             // close CtClass if created from here

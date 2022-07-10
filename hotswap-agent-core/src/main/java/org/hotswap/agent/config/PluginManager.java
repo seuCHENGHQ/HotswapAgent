@@ -297,6 +297,10 @@ public class PluginManager {
             try {
                 LOGGER.reload("Reloading classes {} (autoHotswap)", Arrays.toString(classNames));
                 synchronized (hotswapLock) {
+                    //此方法用于替换类的定义，而不引用现有的类文件字节，就像从源代码重新编译以进行修复和继续调试时所做的那样。
+                    //在要转换现有类文件字节的地方（例如在字节码插装中），应该使用retransformClasses。
+                    //该方法可以修改方法体、常量池和属性值，但不能新增、删除、重命名属性或方法，也不能修改方法的签名
+                    // redefineClasses调用之后，会走到HotSwapTransformer上，并最终走到各个被OnClassLoadedEvent注解的方法，实现各plugin的个性化增强策略
                     instrumentation.redefineClasses(definitions);
                 }
                 LOGGER.debug("... reloaded classes {} (autoHotswap)", Arrays.toString(classNames));
