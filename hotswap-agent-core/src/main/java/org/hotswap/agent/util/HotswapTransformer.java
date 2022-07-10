@@ -189,6 +189,7 @@ public class HotswapTransformer implements ClassFileTransformer {
         List<ClassFileTransformer> toApply = new ArrayList<>();
         List<PluginClassFileTransformer> pluginTransformers = new ArrayList<>();
         try {
+            // 通过OnClassLoadEvent里面的匹配规则，来校验一下这个类是不是plugin想要操作的类，如果是，就将其加入list中，一会儿遍历回调plugin来对class进行操作
             // 1. call transform method of defining transformers
             for (RegisteredTransformersRecord transformerRecord : new ArrayList<RegisteredTransformersRecord>(otherTransformers.values())) {
                 if ((className != null && transformerRecord.pattern.matcher(className).matches()) ||
@@ -227,10 +228,12 @@ public class HotswapTransformer implements ClassFileTransformer {
         }
 
         if(!pluginTransformers.isEmpty()) {
+            // TODO 有点没太看懂这块reduce是在干啥
             pluginTransformers =  reduce(classLoader, pluginTransformers, className);
         }
 
         // ensure classloader initialized
+        // TODO 这里也有点没太看懂是在干啥
        ensureClassLoaderInitialized(classLoader, protectionDomain);
 
         if(toApply.isEmpty() && pluginTransformers.isEmpty()) {
