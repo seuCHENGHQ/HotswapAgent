@@ -57,6 +57,7 @@ public class WatchHandler<T extends Annotation> implements PluginHandler<T> {
     public boolean initMethod(final PluginAnnotation<T> pluginAnnotation) {
         LOGGER.debug("Init for method " + pluginAnnotation.getMethod());
 
+        // FIXME HotswapperPlugin这块有个疑问，这里默认的是需要被热加载的类和HotswapperPlugin使用的是同一个classLoader吗？
         ClassLoader classLoader = pluginManager.getPluginRegistry().getAppClassLoader(pluginAnnotation.getPlugin());
 
         try {

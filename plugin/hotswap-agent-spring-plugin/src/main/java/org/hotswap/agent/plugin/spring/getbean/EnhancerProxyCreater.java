@@ -159,6 +159,7 @@ public class EnhancerProxyCreater {
                         ClassPool cp = getCp(loader);
                         cglibCallback = buildProxyCallbackClass(CGLIB_PACKAGE, cp);
                         cglibNamingPolicy = buildNamingPolicyClass(CGLIB_PACKAGE, cp);
+                        // cglibProxy里面只有一个方法, create
                         cglibProxy = buildProxyCreaterClass(CGLIB_PACKAGE, cglibCallback, cglibNamingPolicy, cp);
                         createCglibProxy = cglibProxy.getDeclaredMethods()[0];
                     }

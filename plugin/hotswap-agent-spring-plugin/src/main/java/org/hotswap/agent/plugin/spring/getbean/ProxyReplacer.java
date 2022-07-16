@@ -81,6 +81,7 @@ public class ProxyReplacer {
             }
         }
 
+        // TODO 为什么这里需要创建代理呢?? 没被jdk和cglib代理过的类, 为什么就可以直接返回呢??
         // create proxy for prototype-scope beans and apsect proxied beans
         if (bean.getClass().getName().startsWith("com.sun.proxy.$Proxy")) {
             InvocationHandler handler = new HotswapSpringInvocationHandler(bean, beanFactry, paramClasses, paramValues);
@@ -100,6 +101,7 @@ public class ProxyReplacer {
                 return bean;
             }
 
+            // spring有自己的代理机制, 这里又被hotswap代理了一下, 相当于套娃代理了好几层??
             return EnhancerProxyCreater.createProxy(beanFactry, bean, paramClasses, paramValues);
         }
 

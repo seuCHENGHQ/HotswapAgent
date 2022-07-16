@@ -51,6 +51,9 @@ public class ProxyReplacerTransformer {
             if (!ctMethod.getName().equals(FACTORY_METHOD_NAME))
                 continue;
 
+            // 这块目的是子类父类判断
+            // 比如如果ctClass是一个子类，但是getBean这个方法在他的父类里面实现了，那么这块就一定要现在子类ctClass中重写一下getBean方法
+            // 放置下面insertAfter有问题
             if (!ctClass.equals(ctMethod.getDeclaringClass())) {
                 ctMethod = overrideMethod(ctClass, ctMethod);
             }
@@ -58,8 +61,14 @@ public class ProxyReplacerTransformer {
             for (CtClass type : ctMethod.getParameterTypes()) {
                 methodParamTypes.append(type.getName()).append(".class").append(", ");
             }
+
+            // $0表示this关键字, $1,$2...表示第1、2...个形参, $_表示返回值, $args表示方法参数组(入参)
+            // 这个if(true)是不是有点多余？
+            // 这个方法的作用其实是让beanFactory在getBean返回bean之后，再被hotSwap
             ctMethod.insertAfter("if(true){return org.hotswap.agent.plugin.spring.getbean.ProxyReplacer.register($0, $_,new Class[]{"
                     + methodParamTypes.substring(0, methodParamTypes.length() - 2) + "}, $args);}");
+
+            // 后面通过DefaultListableBeanFactory.getBean拿到的bean, 如果bean被jdk或者cglib代理过, 那么会通过EnhancerProxyCreater再代理一遍
         }
 
     }
