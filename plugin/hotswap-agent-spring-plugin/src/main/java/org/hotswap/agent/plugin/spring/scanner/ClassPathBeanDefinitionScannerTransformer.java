@@ -42,7 +42,13 @@ public class ClassPathBeanDefinitionScannerTransformer {
      */
     @OnClassLoadEvent(classNameRegexp = "org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider")
     public static void transform(CtClass clazz, ClassPool classPool) throws NotFoundException, CannotCompileException {
+
+        // 如果hotswap-agent.properties文件中 或者启动命令里面没有指定需要basePackagePrefixes
+        // 那么就是用spring扫描的包路径 因此这里取得是spring的basePackages
         if (SpringPlugin.basePackagePrefixes == null) {
+
+            // findCandidateComponents是一个比较关键的方法, 根据basePackage扫描出BeanDefinition
+            // registerBasePackage会将basePackage注册到watcher中, 如果basePackage下有新增类的话, 会通过watcher回调ClassPathBeanRefreshCommand, 来触发spring的bean加载
             CtMethod method = clazz.getDeclaredMethod("findCandidateComponents", new CtClass[]{classPool.get("java.lang.String")});
             method.insertAfter("if (this instanceof org.springframework.context.annotation.ClassPathBeanDefinitionScanner) {" +
                     "org.hotswap.agent.plugin.spring.scanner.ClassPathBeanDefinitionScannerAgent." +
