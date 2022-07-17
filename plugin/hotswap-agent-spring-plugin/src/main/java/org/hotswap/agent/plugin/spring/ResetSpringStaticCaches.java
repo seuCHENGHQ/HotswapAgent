@@ -48,6 +48,7 @@ public class ResetSpringStaticCaches {
             Field field = DefaultListableBeanFactory.class.getDeclaredField("singletonBeanNamesByType");
             field.setAccessible(true);
             // noinspection unchecked
+            // beanName -> bean aliasName -> bean
             Map singletonBeanNamesByType = (Map) field.get(defaultListableBeanFactory);
             singletonBeanNamesByType.clear();
         } catch (Exception e) {
@@ -58,6 +59,7 @@ public class ResetSpringStaticCaches {
             Field field = DefaultListableBeanFactory.class.getDeclaredField("allBeanNamesByType");
             field.setAccessible(true);
             // noinspection unchecked
+            // ClassType -> bean
             Map allBeanNamesByType = (Map) field.get(defaultListableBeanFactory);
             allBeanNamesByType.clear();
         } catch (Exception e) {
@@ -68,6 +70,7 @@ public class ResetSpringStaticCaches {
             Field field = DefaultListableBeanFactory.class.getDeclaredField("nonSingletonBeanNamesByType");
             field.setAccessible(true);
             // noinspection unchecked
+            // 非单例的bean缓存 不过非单例为啥还有缓存...
             Map nonSingletonBeanNamesByType = (Map) field.get(defaultListableBeanFactory);
             nonSingletonBeanNamesByType.clear();
         } catch (Exception e) {

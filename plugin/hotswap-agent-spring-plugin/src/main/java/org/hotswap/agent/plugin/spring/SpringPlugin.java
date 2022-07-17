@@ -68,10 +68,22 @@ import org.hotswap.agent.watch.Watcher;
  * DefaultListableBeanFactory初始化, 关闭metaData等等的缓存, 回调插桩代码
  * -> 回调registerResourceListeners, 监听xml文件的改动
  * -> 回调SpringPlugin.init(version)方法(如果properties文件指定有basePackage的话, 这里会对其进行监听)
- * -> ClassPathBeanDefinitionScanner.findCandidateComponents方法执行, 触发插桩代码ClassPathBeanDefinitionScannerAgent.registerBasePackage, 并回调到SpringPlugin.registerComponentScanBasePackage, 给basePackage注册一个监听器到watcher中, 有新增类的话会触发类加载
+ * -> ClassPathBeanDefinitionScanner.findCandidateComponents方法执行, 触发插桩代码ClassPathBeanDefinitionScannerAgent.registerBasePackage, 并回调到SpringPlugin.registerComponentScanBasePackage
+ * -> registerComponentScanBasePackage -> registerBasePackage 给basePackage注册一个transformer 在class redefine的时候, 触发spring的bean更新
+ * -> registerComponentScanBasePackage 方法本身会将basePackage注册到watcher中, 这样如果basePackage下有新增class的话, 会触发spring的bean加载和初始化
  *
- * 热更新生效流程
+ * 热更新生效流程 -- 分class更新和新增两部分
+ * basePackage下class有更新
+ * -> HotswapperPlugin会发现有class新增
+ * -> 通过instrument.redeineClass来进行热加载
+ * -> 回调到HotswapTransformer, 并通过它, 依次回调注册其中的transformer, 就会回调到springPlugin注册的transformer
+ * -> 通过analyzer.isReloadNeeded判断是否需要触发spring的更新, 如果为true, 则通过ClassPathBeanRefreshCommand来触发spring的bean更新
  *
+ * basePackage下有新增class
+ * -> watcher会将新增事件转发给上边注册的监听器
+ * -> 通过ClassPathBeanRefreshCommand来触发spring的bean加载
+ *
+ * ClassPathBeanRefreshCommand.executeCommand可以看到, 它又通过反射的方式, 调用ClassPathBeanDefinitionScannerAgent.refreshClass
  *
  * @author Jiri Bubnik
  */
@@ -149,6 +161,7 @@ public class SpringPlugin {
         final SpringChangesAnalyzer analyzer = new SpringChangesAnalyzer(appClassLoader);
         // v.d.: Force load/Initialize ClassPathBeanRefreshCommand classe in JVM. This is hack, in whatever reason sometimes new ClassPathBeanRefreshCommand()
         //       stays locked inside agent's transform() call. It looks like some bug in JVMTI or JVMTI-debugger() locks handling.
+        // 这句是为了强制让jvm先加载和初始化ClassPathBeanRefreshCommand 看起来有点蠢所以叫fooCmd?
         ClassPathBeanRefreshCommand fooCmd = new ClassPathBeanRefreshCommand();
         hotswapTransformer.registerTransformer(appClassLoader, getClassNameRegExp(basePackage), new HaClassFileTransformer() {
             @Override

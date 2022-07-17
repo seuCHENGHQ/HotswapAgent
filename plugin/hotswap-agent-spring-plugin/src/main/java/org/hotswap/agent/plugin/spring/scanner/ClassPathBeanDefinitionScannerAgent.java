@@ -180,6 +180,7 @@ public class ClassPathBeanDefinitionScannerAgent {
                 processCommonDefinitionAnnotations((AnnotatedBeanDefinition) candidate);
             }
 
+            // 如果是bean更新, 那么要把已有的注册的bean移除掉, 再把新的注册进去
             removeIfExists(beanName);
             if (checkCandidate(beanName, candidate)) {
 
@@ -188,6 +189,7 @@ public class ClassPathBeanDefinitionScannerAgent {
 
                 LOGGER.reload("Registering Spring bean '{}'", beanName);
                 LOGGER.debug("Bean definition '{}'", beanName, candidate);
+                // TODO 这里beanDefinition更新, 是在哪里构造出bean的呢???
                 registerBeanDefinition(definitionHolder, registry);
 
                 DefaultListableBeanFactory bf = maybeRegistryToBeanFactory();
@@ -212,12 +214,15 @@ public class ClassPathBeanDefinitionScannerAgent {
             LOGGER.debug("Removing bean definition '{}'", beanName);
             DefaultListableBeanFactory bf = maybeRegistryToBeanFactory();
             if (bf != null) {
+                // 去掉这个Cache, 保证了controller的热更新是生效的
                 ResetRequestMappingCaches.reset(bf);
             }
             registry.removeBeanDefinition(beanName);
 
+            // 其他各种cache的清理
             ResetSpringStaticCaches.reset();
             if (bf != null) {
+                // TODO 为什么要清理这个, 清理了之后怎么重新获取beanPostProcessors呢??
                 ResetBeanPostProcessorCaches.reset(bf);
             }
         }
@@ -243,6 +248,9 @@ public class ClassPathBeanDefinitionScannerAgent {
 
     /**
      * Resolve bean definition from class definition if applicable.
+     *
+     * 这里的流程其实和ClassPathBeanDefinitionScanner.doScan差不多
+     * 通过反射的方式调用了ClassPathBeanDefinitionScanner中的很多方法
      *
      * @param bytes class definition.
      * @return the definition or null if not a spring bean
