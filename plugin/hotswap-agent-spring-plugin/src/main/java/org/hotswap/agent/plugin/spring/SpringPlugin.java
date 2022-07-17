@@ -57,6 +57,22 @@ import org.hotswap.agent.watch.Watcher;
 /**
  * Spring plugin.
  *
+ * SpringPlugin初始化
+ * HotswapAgent扫描到SpringPlugin注解
+ * -> 完成自身static方法的初始化调用
+ * -> 对ClassPathBeanDefinitionScannerTransformer, ProxyReplacerTransformer, XmlBeanDefinitionScannerTransformer进行初始化
+ * -> ClassPathBeanDefinitionScannerTransformer static方法初始化调用 对ClassPathBeanDefinitionScanner.findCandidateComponents方法进行增强(让该方法执行完成后, 调用ClassPathBeanDefinitionScannerAgent.registerBasePackage方法)
+ * 后面就是spring应用启动时, 插桩代码被执行的部分
+ *
+ * Spring应用启动
+ * DefaultListableBeanFactory初始化, 关闭metaData等等的缓存, 回调插桩代码
+ * -> 回调registerResourceListeners, 监听xml文件的改动
+ * -> 回调SpringPlugin.init(version)方法(如果properties文件指定有basePackage的话, 这里会对其进行监听)
+ * -> ClassPathBeanDefinitionScanner.findCandidateComponents方法执行, 触发插桩代码ClassPathBeanDefinitionScannerAgent.registerBasePackage, 并回调到SpringPlugin.registerComponentScanBasePackage, 给basePackage注册一个监听器到watcher中, 有新增类的话会触发类加载
+ *
+ * 热更新生效流程
+ *
+ *
  * @author Jiri Bubnik
  */
 @Plugin(name = "Spring", description = "Reload Spring configuration after class definition/change.",
